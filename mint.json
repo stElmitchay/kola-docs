@@ -15,11 +15,15 @@
     {
       "name": "API Status",
       "url": "https://kola-api-beta.vercel.app/api/v1/public/health"
+    },
+    {
+      "name": "GitHub",
+      "url": "https://github.com/stElmitchay/kola-api"
     }
   ],
   "topbarCtaButton": {
-    "name": "GitHub",
-    "url": "https://github.com/stElmitchay/kola-api"
+    "name": "Get Started",
+    "url": "https://kola.mintlify.app/quickstart"
   },
   "tabs": [
     { "name": "Documentation", "url": "/" },
