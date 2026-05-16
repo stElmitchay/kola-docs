@@ -1,0 +1,230 @@
+---
+title: "JavaScript"
+description: "Full integration examples using Node.js"
+---
+
+## JavaScript Integration
+
+### Setup
+
+```javascript
+const API_BASE = 'https://kola-api-beta.vercel.app/api/v1';
+const API_KEY = process.env.KOLA_API_KEY;
+
+async function kolaRequest(path, options = {}) {
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-API-Key': API_KEY,
+      ...options.headers,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || `HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+```
+
+---
+
+### Create a USSD deposit
+
+```javascript
+async function createUssdDeposit(phoneNumber, amountSle) {
+  const deposit = await kolaRequest('/deposits', {
+    method: 'POST',
+    body: JSON.stringify({
+      amount: amountSle,
+      currency: 'SLE',
+      paymentMethod: 'ussd',
+      phoneNumber,
+    }),
+  });
+
+  console.log(`Dial this code: ${deposit.ussdCode}`);
+  console.log(`Expires at: ${deposit.expiresAt}`);
+  console.log(`Deposit ID: ${deposit.id}`);
+
+  return deposit;
+}
+
+// 500.00 SLE deposit
+await createUssdDeposit('+23276123456', 50000);
+```
+
+---
+
+### Create a checkout deposit
+
+```javascript
+async function createCheckoutDeposit(phoneNumber, amountSle, walletAddress) {
+  const deposit = await kolaRequest('/deposits', {
+    method: 'POST',
+    body: JSON.stringify({
+      amount: amountSle,
+      currency: 'SLE',
+      paymentMethod: 'checkout',
+      phoneNumber,
+      walletAddress,
+      successUrl: 'https://yourapp.com/success',
+      cancelUrl: 'https://yourapp.com/cancel',
+    }),
+  });
+
+  // Redirect user to the checkout page
+  console.log(`Redirect to: ${deposit.redirectUrl}`);
+
+  return deposit;
+}
+```
+
+---
+
+### Poll deposit status
+
+```javascript
+async function waitForDeposit(depositId, intervalMs = 5000, maxAttempts = 60) {
+  for (let i = 0; i < maxAttempts; i++) {
+    const deposit = await kolaRequest(`/deposits/${depositId}`);
+
+    console.log(`Status: ${deposit.status}`);
+
+    if (deposit.status === 'completed') {
+      console.log(`USDC sent! Tx: ${deposit.solanaTxSignature}`);
+      return deposit;
+    }
+
+    if (deposit.status === 'failed') {
+      throw new Error(`Deposit failed: ${deposit.failureReason}`);
+    }
+
+    if (deposit.status === 'expired') {
+      throw new Error('Deposit expired — user did not complete payment');
+    }
+
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+
+  throw new Error('Timeout waiting for deposit');
+}
+```
+
+---
+
+### Derive a wallet from phone number
+
+```javascript
+async function deriveWallet(phoneNumber) {
+  const result = await kolaRequest('/wallets/derive', {
+    method: 'POST',
+    body: JSON.stringify({ phoneNumber }),
+  });
+
+  console.log(`Wallet: ${result.walletAddress}`);
+  console.log(`New wallet: ${result.isNew}`);
+
+  return result;
+}
+```
+
+---
+
+### Check wallet balance
+
+```javascript
+async function getBalance(walletAddress) {
+  const result = await kolaRequest(`/wallets/${walletAddress}/balance`);
+
+  console.log(`${result.balance} ${result.currency}`);
+
+  return result;
+}
+```
+
+---
+
+### List deposits
+
+```javascript
+async function listDeposits(filters = {}) {
+  const params = new URLSearchParams(filters).toString();
+  const path = params ? `/deposits?${params}` : '/deposits';
+
+  return kolaRequest(path);
+}
+
+// All deposits
+const all = await listDeposits();
+
+// Completed deposits, limit 10
+const completed = await listDeposits({ status: 'completed', limit: 10 });
+```
+
+---
+
+### Full end-to-end flow
+
+```javascript
+async function onRampFlow(phoneNumber, amountSle) {
+  // 1. Derive wallet (or user provides their own)
+  const wallet = await deriveWallet(phoneNumber);
+
+  // 2. Create deposit
+  const deposit = await createUssdDeposit(phoneNumber, amountSle);
+
+  // 3. Show USSD code to user
+  console.log(`Tell user to dial: ${deposit.ussdCode}`);
+
+  // 4. Poll for completion
+  const completed = await waitForDeposit(deposit.id);
+
+  // 5. Check balance
+  const balance = await getBalance(wallet.walletAddress);
+  console.log(`User now has ${balance.balance} USDC`);
+
+  return completed;
+}
+
+await onRampFlow('+23276123456', 50000);
+```
+
+---
+
+### Handle webhooks (Express example)
+
+```javascript
+import crypto from 'crypto';
+
+function verifyMonimeSignature(payload, signature, secret) {
+  const expected = crypto
+    .createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex');
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expected)
+  );
+}
+
+app.post('/webhooks/kola', express.raw({ type: 'application/json' }), (req, res) => {
+  const signature = req.headers['monime-signature'];
+  const payload = req.body.toString();
+
+  if (!verifyMonimeSignature(payload, signature, process.env.MONIME_WEBHOOK_SECRET)) {
+    return res.status(401).send('Invalid signature');
+  }
+
+  const event = JSON.parse(payload);
+  console.log(`Event: ${event.type}, Reference: ${event.data.reference}`);
+
+  // Kola API handles the USDC transfer automatically via its own webhook handler.
+  // Use this webhook to update your app's UI or notify the user.
+
+  res.status(200).send('OK');
+});
+```

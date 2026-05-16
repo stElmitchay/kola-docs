@@ -1,0 +1,144 @@
+---
+title: "Errors"
+description: "Error codes, response format, and troubleshooting"
+---
+
+## Error Handling
+
+All error responses follow a consistent format.
+
+### Error response format
+
+```json
+{
+  "message": "A human-readable error description"
+}
+```
+
+For validation errors (Zod), the response includes field-level details:
+
+```json
+{
+  "message": "Validation failed",
+  "errors": [
+    {
+      "path": ["amount"],
+      "message": "Expected number, received string"
+    }
+  ]
+}
+```
+
+---
+
+## HTTP Status Codes
+
+| Code | Meaning |
+|------|---------|
+| 200 | Success |
+| 201 | Created (new resource) |
+| 400 | Bad Request — invalid input or missing required fields |
+| 401 | Unauthorized — missing or invalid API key / admin key |
+| 404 | Not Found — resource doesn't exist or belongs to another application |
+| 500 | Internal Server Error — something went wrong on our end |
+| 502 | Bad Gateway — upstream service (Monime, Solana) unavailable |
+
+---
+
+## Error Types
+
+### ValidationError (400)
+
+Thrown when request data fails validation.
+
+```json
+{
+  "message": "Invalid Sierra Leone phone number"
+}
+```
+
+**Common causes:**
+- Invalid phone number format
+- Missing required fields (`amount`, `currency`, `phoneNumber`, `paymentMethod`)
+- Invalid currency (must be `"SLE"`)
+- Rate must be a positive number
+- Amount too small to convert to USDC
+
+### NotFoundError (404)
+
+Thrown when a resource doesn't exist or doesn't belong to the authenticated application.
+
+```json
+{
+  "message": "Deposit not found"
+}
+```
+
+### AuthenticationError (401)
+
+Thrown when API key or admin key is missing or invalid.
+
+```json
+{
+  "message": "Invalid API key"
+}
+```
+
+**Common causes:**
+- Missing `X-API-Key` or `X-Admin-Key` header
+- Revoked or expired API key
+- Key doesn't match any active record
+
+### MonimeError (502)
+
+Thrown when the Monime payment gateway returns an error.
+
+```json
+{
+  "message": "Monime API error: insufficient funds"
+}
+```
+
+**Common causes:**
+- Monime service temporarily unavailable
+- Invalid payment configuration
+
+### OnChainError (502)
+
+Thrown when a Solana blockchain operation fails.
+
+```json
+{
+  "message": "USDC transfer failed: insufficient SOL for fees"
+}
+```
+
+**Common causes:**
+- Treasury wallet has insufficient SOL for transaction fees
+- Treasury wallet has insufficient USDC to transfer
+- Solana network congestion
+
+### DatabaseError (500)
+
+Thrown when a Supabase database operation fails.
+
+```json
+{
+  "message": "Failed to create deposit: duplicate key value"
+}
+```
+
+---
+
+## Common Errors & Fixes
+
+| Error | Fix |
+|-------|-----|
+| `Missing API key` | Add `X-API-Key: your_key` header |
+| `Invalid API key` | Check your key is correct and active |
+| `Missing admin key` | Add `X-Admin-Key: your_admin_key` header |
+| `Invalid Sierra Leone phone number` | Use format `+232XXXXXXXX` (country code + 8 digits) |
+| `No active exchange rate configured` | Admin must call `PUT /v1/admin/exchange-rates` first |
+| `Amount too small to convert to USDC` | Increase the deposit amount |
+| `X-Application-Id header is required` | Add `X-Application-Id` header to admin rate endpoints |
+| `successUrl and cancelUrl are required` | Required when `paymentMethod` is `"checkout"` |

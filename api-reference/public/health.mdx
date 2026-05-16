@@ -1,0 +1,39 @@
+---
+title: "Health Check"
+api: "GET /v1/public/health"
+description: "Check if the API is running"
+---
+
+## Health Check
+
+Returns the API status. No authentication required.
+
+<RequestExample>
+```bash
+curl https://kola-api-beta.vercel.app/api/v1/public/health
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "status": "ok",
+  "service": "kola-api",
+  "version": "1.0.0"
+}
+```
+</ResponseExample>
+
+### Response fields
+
+<ResponseField name="status" type="string">
+  Always `"ok"` when the API is running.
+</ResponseField>
+
+<ResponseField name="service" type="string">
+  Service name: `"kola-api"`.
+</ResponseField>
+
+<ResponseField name="version" type="string">
+  Current API version.
+</ResponseField>

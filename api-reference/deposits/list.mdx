@@ -1,0 +1,72 @@
+---
+title: "List Deposits"
+api: "GET /v1/deposits"
+description: "List all deposits with optional filters"
+---
+
+## List Deposits
+
+Returns a list of deposits for your application. Supports filtering by phone number and status.
+
+### Headers
+
+<ParamField header="X-API-Key" type="string" required>
+  Your API key.
+</ParamField>
+
+### Query parameters
+
+<ParamField query="phoneNumber" type="string">
+  Filter by phone number (normalized format, e.g., `+23276123456`).
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by status: `pending`, `confirmed`, `processing`, `completed`, `failed`, `expired`.
+</ParamField>
+
+<ParamField query="limit" type="integer">
+  Maximum number of results (default: all).
+</ParamField>
+
+<ParamField query="offset" type="integer">
+  Number of results to skip (for pagination).
+</ParamField>
+
+<RequestExample>
+```bash All deposits
+curl https://kola-api-beta.vercel.app/api/v1/deposits \
+  -H "X-API-Key: YOUR_API_KEY"
+```
+
+```bash Filtered
+curl "https://kola-api-beta.vercel.app/api/v1/deposits?status=completed&limit=10" \
+  -H "X-API-Key: YOUR_API_KEY"
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+[
+  {
+    "id": "e60ba3db-9c51-4e8e-9e1c-ee62ae69ed95",
+    "application": "a7784b0d-8be0-4338-be20-1d1a3ac9d1fc",
+    "phone_number": "+23276123456",
+    "wallet_address": "7LFugw7HAGEFWexnHi3dyDBaWniXJLthLGkPQip4jEEA",
+    "wallet_type": "derived",
+    "amount_sle": 50000,
+    "amount_usdc": 20000000,
+    "exchange_rate": 25,
+    "payment_method": "ussd",
+    "status": "completed",
+    "solana_tx_signature": "5UfDkR8e2n3g...",
+    "created_at": "2026-05-16T18:37:52.734Z",
+    "updated_at": "2026-05-16T18:38:12.104Z"
+  }
+]
+```
+</ResponseExample>
+
+### Notes
+
+- Results are ordered by `created_at` descending (newest first)
+- Each application only sees its own deposits

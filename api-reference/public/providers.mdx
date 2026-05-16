@@ -1,0 +1,70 @@
+---
+title: "List Providers"
+api: "GET /v1/public/providers"
+description: "List supported mobile money providers in Sierra Leone"
+---
+
+## List Providers
+
+Returns all supported mobile money providers for Sierra Leone. No authentication required.
+
+<RequestExample>
+```bash
+curl https://kola-api-beta.vercel.app/api/v1/public/providers
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+[
+  {
+    "id": "m17",
+    "name": "Orange Money",
+    "type": "momo",
+    "country": "SL",
+    "status": { "active": true },
+    "featureSet": {
+      "canPayTo": true,
+      "canPayFrom": true,
+      "canVerifyAccount": true
+    }
+  },
+  {
+    "id": "m18",
+    "name": "Africell Money",
+    "type": "momo",
+    "country": "SL",
+    "status": { "active": true },
+    "featureSet": {
+      "canPayTo": true,
+      "canPayFrom": true,
+      "canVerifyAccount": false
+    }
+  }
+]
+```
+</ResponseExample>
+
+### Response fields
+
+Each provider object contains:
+
+<ResponseField name="id" type="string">
+  Monime provider identifier (e.g., `"m17"`).
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  Human-readable provider name.
+</ResponseField>
+
+<ResponseField name="type" type="string">
+  Always `"momo"` for mobile money providers.
+</ResponseField>
+
+<ResponseField name="country" type="string">
+  ISO country code. Always `"SL"` for Sierra Leone.
+</ResponseField>
+
+<ResponseField name="status.active" type="boolean">
+  Whether the provider is currently operational.
+</ResponseField>

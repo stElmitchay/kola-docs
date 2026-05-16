@@ -1,0 +1,92 @@
+---
+title: "Authentication"
+description: "How to authenticate with the Kola API"
+---
+
+# Authentication
+
+Kola API uses two levels of authentication depending on the operation.
+
+## API Key Authentication
+
+Used for all client-facing endpoints (deposits, wallets). Pass your key in the `X-API-Key` header:
+
+```bash
+curl https://kola-api-beta.vercel.app/api/v1/deposits \
+  -H "X-API-Key: kola_9afab24a3610acdb5bb9f9a990d45daee4dc2395dde3faae1c5ee559401c4dbd"
+```
+
+Alternatively, pass it as a query parameter:
+
+```bash
+curl "https://kola-api-beta.vercel.app/api/v1/deposits?api_key=kola_..."
+```
+
+### Key format
+
+All API keys are prefixed with `kola_` followed by 64 hex characters:
+
+```
+kola_9afab24a3610acdb5bb9f9a990d45daee4dc2395dde3faae1c5ee559401c4dbd
+```
+
+### Protected endpoints
+
+| Endpoint Group | Auth Required |
+|---------------|---------------|
+| `GET /v1/public/*` | None |
+| `POST /v1/deposits` | API Key |
+| `GET /v1/deposits/*` | API Key |
+| `POST /v1/wallets/*` | API Key |
+| `GET /v1/wallets/*` | API Key |
+| `/v1/admin/*` | Admin Key |
+| `POST /webhooks/monime` | Signature verification |
+
+## Admin Key Authentication
+
+Used for administrative operations (creating API keys, setting exchange rates). Pass the admin secret in the `X-Admin-Key` header:
+
+```bash
+curl -X POST https://kola-api-beta.vercel.app/api/v1/admin/api-keys \
+  -H "Content-Type: application/json" \
+  -H "X-Admin-Key: YOUR_ADMIN_SECRET" \
+  -d '{"name": "my-app", "businessName": "My Business", "appName": "my-app"}'
+```
+
+The admin key is a shared secret set by the API operator. It is not rotatable via the API — it's configured as an environment variable on the server.
+
+## Error responses
+
+**Missing key:**
+```json
+{
+  "error": "Missing API key"
+}
+```
+
+**Invalid key:**
+```json
+{
+  "error": "Invalid API key"
+}
+```
+
+**Expired key:**
+```json
+{
+  "error": "API key expired"
+}
+```
+
+All auth errors return HTTP `401`.
+
+## Security best practices
+
+<Warning>
+  Never expose your API key in client-side code (browser JavaScript, mobile app bundles). Always make API calls from your backend server.
+</Warning>
+
+- Store keys in environment variables, not in source code
+- Use separate keys for development and production
+- Rotate keys periodically by creating a new one and deactivating the old
+- Monitor `last_used_at` to detect unused or compromised keys

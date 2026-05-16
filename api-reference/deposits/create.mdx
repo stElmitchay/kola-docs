@@ -1,0 +1,162 @@
+---
+title: "Create Deposit"
+api: "POST /v1/deposits"
+description: "Initiate a mobile money to USDC deposit"
+---
+
+## Create Deposit
+
+Creates a new deposit, generating either a USSD code or checkout URL for the user to pay via mobile money.
+
+### Headers
+
+<ParamField header="X-API-Key" type="string" required>
+  Your API key.
+</ParamField>
+
+### Body parameters
+
+<ParamField body="amount" type="integer" required>
+  Amount in SLE minor units (cents). `50000` = 500.00 SLE.
+</ParamField>
+
+<ParamField body="currency" type="string" required>
+  Must be `"SLE"`.
+</ParamField>
+
+<ParamField body="paymentMethod" type="string" required>
+  Either `"ussd"` or `"checkout"`.
+</ParamField>
+
+<ParamField body="phoneNumber" type="string" required>
+  Sierra Leonean phone number (e.g., `"+23276123456"`).
+</ParamField>
+
+<ParamField body="walletAddress" type="string">
+  Solana wallet address to receive USDC. If omitted, a wallet is derived from the phone number.
+</ParamField>
+
+<ParamField body="successUrl" type="string">
+  Redirect URL after successful checkout payment. **Required** when `paymentMethod` is `"checkout"`.
+</ParamField>
+
+<ParamField body="cancelUrl" type="string">
+  Redirect URL if user cancels checkout. **Required** when `paymentMethod` is `"checkout"`.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Optional key-value pairs to attach to the deposit.
+</ParamField>
+
+<RequestExample>
+```bash USSD
+curl -X POST https://kola-api-beta.vercel.app/api/v1/deposits \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -d '{
+    "amount": 50000,
+    "currency": "SLE",
+    "paymentMethod": "ussd",
+    "phoneNumber": "+23276123456"
+  }'
+```
+
+```bash Checkout
+curl -X POST https://kola-api-beta.vercel.app/api/v1/deposits \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -d '{
+    "amount": 50000,
+    "currency": "SLE",
+    "paymentMethod": "checkout",
+    "phoneNumber": "+23276123456",
+    "walletAddress": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+    "successUrl": "https://yourapp.com/success",
+    "cancelUrl": "https://yourapp.com/cancel"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json USSD Response
+{
+  "id": "e60ba3db-9c51-4e8e-9e1c-ee62ae69ed95",
+  "status": "pending",
+  "amountSle": 50000,
+  "amountUsdc": 20000000,
+  "exchangeRate": 25,
+  "walletAddress": "7LFugw7HAGEFWexnHi3dyDBaWniXJLthLGkPQip4jEEA",
+  "walletType": "derived",
+  "paymentMethod": "ussd",
+  "ussdCode": "*715*6908234831#",
+  "expiresAt": "2026-05-16T19:07:52.936Z"
+}
+```
+
+```json Checkout Response
+{
+  "id": "f71cb4ec-0a62-5f9f-a20d-ff73bf70fe06",
+  "status": "pending",
+  "amountSle": 50000,
+  "amountUsdc": 20000000,
+  "exchangeRate": 25,
+  "walletAddress": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+  "walletType": "provided",
+  "paymentMethod": "checkout",
+  "redirectUrl": "https://checkout.monime.io/session/...",
+  "expiresAt": "2026-05-16T19:07:52.936Z"
+}
+```
+</ResponseExample>
+
+### Response fields
+
+<ResponseField name="id" type="string">
+  Unique deposit ID (UUID).
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Always `"pending"` on creation.
+</ResponseField>
+
+<ResponseField name="amountSle" type="integer">
+  SLE amount in minor units.
+</ResponseField>
+
+<ResponseField name="amountUsdc" type="integer">
+  USDC amount in minor units (6 decimals).
+</ResponseField>
+
+<ResponseField name="exchangeRate" type="number">
+  Rate used for this deposit (locked in at creation).
+</ResponseField>
+
+<ResponseField name="walletAddress" type="string">
+  Solana address where USDC will be sent.
+</ResponseField>
+
+<ResponseField name="walletType" type="string">
+  `"derived"` or `"provided"`.
+</ResponseField>
+
+<ResponseField name="ussdCode" type="string">
+  USSD code to dial (only for `ussd` payment method).
+</ResponseField>
+
+<ResponseField name="redirectUrl" type="string">
+  Checkout page URL (only for `checkout` payment method).
+</ResponseField>
+
+<ResponseField name="expiresAt" type="string">
+  ISO timestamp when the payment window expires.
+</ResponseField>
+
+### Errors
+
+| Status | Message |
+|--------|---------|
+| 400 | `Invalid Sierra Leone phone number` |
+| 400 | `No active exchange rate configured. Admin must set a rate first.` |
+| 400 | `Amount too small to convert to USDC` |
+| 400 | `successUrl and cancelUrl are required for checkout payment method` |
+| 401 | `Missing API key` / `Invalid API key` |

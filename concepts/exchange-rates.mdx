@@ -1,0 +1,56 @@
+---
+title: "Exchange Rates"
+description: "How SLE/USDC exchange rates are managed"
+---
+
+# Exchange Rates
+
+Exchange rates define how many Sierra Leonean Leones (SLE) equal one USDC. Rates are set by the API operator (admin) and are scoped per application.
+
+## How rates work
+
+- **Rate definition**: The `rate` value represents SLE per 1 USDC
+- **Example**: A rate of `25` means 25 SLE = 1 USDC
+- **Scoped**: Each application (API key) has its own exchange rate
+- **Snapshot**: When a deposit is created, the current rate is locked in — rate changes after creation don't affect existing deposits
+
+## Setting a rate
+
+Only admins can set exchange rates. Use the admin endpoint with the application ID:
+
+```bash
+curl -X PUT https://kola-api-beta.vercel.app/api/v1/admin/exchange-rates \
+  -H "Content-Type: application/json" \
+  -H "X-Admin-Key: YOUR_ADMIN_KEY" \
+  -H "X-Application-Id: a7784b0d-8be0-4338-be20-1d1a3ac9d1fc" \
+  -d '{"rate": 25, "setBy": "admin"}'
+```
+
+## Rate history
+
+The API maintains a history of all rate changes. When a new rate is set, the previous rate is deactivated. Only one rate is active per application at any time.
+
+Query the history:
+```bash
+curl https://kola-api-beta.vercel.app/api/v1/admin/exchange-rates \
+  -H "X-Admin-Key: YOUR_ADMIN_KEY" \
+  -H "X-Application-Id: a7784b0d-8be0-4338-be20-1d1a3ac9d1fc"
+```
+
+## Public rate check
+
+Anyone can check the current rate for an application (no auth required):
+
+```bash
+curl "https://kola-api-beta.vercel.app/api/v1/public/rate?application=a7784b0d-..."
+```
+
+## Important notes
+
+<Warning>
+  A deposit cannot be created if no active exchange rate exists for the application. The admin must set a rate before any deposits can be processed.
+</Warning>
+
+- Rate changes take effect immediately for new deposits
+- Existing deposits retain the rate that was active at their creation time
+- There is no automatic rate feed — rates must be set manually via the admin endpoint

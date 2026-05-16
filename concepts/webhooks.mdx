@@ -1,0 +1,73 @@
+---
+title: "Webhooks"
+description: "How payment confirmations are processed"
+---
+
+# Webhooks
+
+Kola API uses webhooks from Monime (the mobile money gateway) to know when a user has completed their payment. You don't need to set up webhooks yourself — they're configured on the API operator's side.
+
+## How it works
+
+1. User completes mobile money payment (dials USSD code or pays via checkout)
+2. Monime sends a webhook to `POST /api/webhooks/monime`
+3. Kola API verifies the signature, finds the matching deposit, and initiates the USDC transfer
+4. Deposit status updates: `pending` → `confirmed` → `processing` → `completed`
+
+## Webhook events
+
+| Event | Description | Action taken |
+|-------|-------------|-------------|
+| `payment_code.completed` | USSD payment successful | Transfer USDC |
+| `checkout_session.completed` | Checkout payment successful | Transfer USDC |
+| `payment_code.expired` | USSD code expired | Mark deposit as `expired` |
+| `checkout_session.expired` | Checkout session expired | Mark deposit as `expired` |
+| `checkout_session.cancelled` | User cancelled checkout | Mark deposit as `expired` |
+
+## Signature verification
+
+Every webhook request includes a `Monime-Signature` header. The API verifies this using HMAC-SHA256 with the shared webhook secret. Requests with invalid signatures are rejected with `401`.
+
+## Idempotency
+
+Webhooks may fire multiple times for the same event. The API handles this safely:
+
+- If a deposit is already `completed` or `failed`, the webhook is acknowledged but no action is taken
+- USDC transfers are only initiated once per deposit
+- All status transitions are atomic
+
+## For integrators
+
+As an API integrator, you don't interact with webhooks directly. Instead:
+
+1. **Create a deposit** via `POST /v1/deposits`
+2. **Poll the status** via `GET /v1/deposits/:id`
+3. **Check for completion** — when `status` becomes `"completed"`, the `solanaTxSignature` field contains the Solana transaction hash
+
+### Recommended polling strategy
+
+```javascript
+async function waitForDeposit(depositId, apiKey) {
+  const maxAttempts = 60; // 30 minutes at 30s intervals
+
+  for (let i = 0; i < maxAttempts; i++) {
+    const res = await fetch(
+      `https://kola-api-beta.vercel.app/api/v1/deposits/${depositId}`,
+      { headers: { 'X-API-Key': apiKey } }
+    );
+    const deposit = await res.json();
+
+    if (deposit.status === 'completed') return deposit;
+    if (deposit.status === 'failed') throw new Error(deposit.failureReason);
+    if (deposit.status === 'expired') throw new Error('Payment expired');
+
+    await new Promise(r => setTimeout(r, 30000)); // Wait 30s
+  }
+
+  throw new Error('Timeout waiting for payment');
+}
+```
+
+<Info>
+  In production, consider using a job queue or background worker to poll deposit status rather than blocking a request.
+</Info>

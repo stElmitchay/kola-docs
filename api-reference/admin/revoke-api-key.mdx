@@ -1,0 +1,48 @@
+---
+title: "Revoke API Key"
+api: "DELETE /v1/admin/api-keys/{id}"
+description: "Deactivate an API key"
+---
+
+## Revoke API Key
+
+Deactivates an API key. The key will immediately stop working for all authenticated requests.
+
+### Headers
+
+<ParamField header="X-Admin-Key" type="string" required>
+  Your admin secret key.
+</ParamField>
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  The API key record ID (UUID).
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X DELETE https://kola-api-beta.vercel.app/api/v1/admin/api-keys/a7784b0d-8be0-4338-be20-1d1a3ac9d1fc \
+  -H "X-Admin-Key: YOUR_ADMIN_KEY"
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "message": "API key deactivated"
+}
+```
+</ResponseExample>
+
+### Notes
+
+- This is a soft delete — the key record remains but is marked inactive
+- Any in-flight requests using this key will fail on subsequent calls
+- This action cannot be undone
+
+### Errors
+
+| Status | Message |
+|--------|---------|
+| 401 | `Missing admin key` / `Invalid admin key` |

@@ -1,0 +1,68 @@
+---
+title: "Get Deposit"
+api: "GET /v1/deposits/{id}"
+description: "Get the status and details of a deposit"
+---
+
+## Get Deposit
+
+Retrieve a deposit by its ID. Returns the current status including the Solana transaction signature when completed.
+
+### Headers
+
+<ParamField header="X-API-Key" type="string" required>
+  Your API key.
+</ParamField>
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  The deposit UUID.
+</ParamField>
+
+<RequestExample>
+```bash
+curl https://kola-api-beta.vercel.app/api/v1/deposits/e60ba3db-9c51-4e8e-9e1c-ee62ae69ed95 \
+  -H "X-API-Key: YOUR_API_KEY"
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "id": "e60ba3db-9c51-4e8e-9e1c-ee62ae69ed95",
+  "status": "completed",
+  "amountSle": 50000,
+  "amountUsdc": 20000000,
+  "exchangeRate": 25,
+  "walletAddress": "7LFugw7HAGEFWexnHi3dyDBaWniXJLthLGkPQip4jEEA",
+  "walletType": "derived",
+  "paymentMethod": "ussd",
+  "solanaTxSignature": "5UfDkR8e2n3g7hJ9kL2mN4pQ6rS8tU0vW2xY4zA6bC8dE0fG2hI4jK6lM8nO0pQ2rS4tU6vW8xY0zA2bC4dE6fG",
+  "failureReason": null,
+  "createdAt": "2026-05-16T18:37:52.734Z",
+  "updatedAt": "2026-05-16T18:38:12.104Z"
+}
+```
+</ResponseExample>
+
+### Response fields
+
+<ResponseField name="status" type="string">
+  One of: `pending`, `confirmed`, `processing`, `completed`, `failed`, `expired`.
+</ResponseField>
+
+<ResponseField name="solanaTxSignature" type="string | null">
+  Solana transaction signature. Only present when status is `completed`. Use this to verify on a Solana explorer.
+</ResponseField>
+
+<ResponseField name="failureReason" type="string | null">
+  Error message when status is `failed`.
+</ResponseField>
+
+### Errors
+
+| Status | Message |
+|--------|---------|
+| 401 | `Missing API key` / `Invalid API key` |
+| 404 | `Deposit not found` |

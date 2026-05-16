@@ -1,0 +1,77 @@
+---
+title: "Derive Wallet"
+api: "POST /v1/wallets/derive"
+description: "Derive a Solana wallet address from a phone number"
+---
+
+## Derive Wallet
+
+Derives a deterministic Solana wallet address from a Sierra Leonean phone number. If a wallet has already been derived for this phone number, the existing address is returned.
+
+### Headers
+
+<ParamField header="X-API-Key" type="string" required>
+  Your API key.
+</ParamField>
+
+### Body parameters
+
+<ParamField body="phoneNumber" type="string" required>
+  Sierra Leonean phone number (e.g., `"+23276123456"`).
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X POST https://kola-api-beta.vercel.app/api/v1/wallets/derive \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -d '{
+    "phoneNumber": "+23276123456"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json New wallet
+{
+  "walletAddress": "7LFugw7HAGEFWexnHi3dyDBaWniXJLthLGkPQip4jEEA",
+  "isNew": true,
+  "phoneNumber": "+23276123456"
+}
+```
+
+```json Existing wallet
+{
+  "walletAddress": "7LFugw7HAGEFWexnHi3dyDBaWniXJLthLGkPQip4jEEA",
+  "isNew": false,
+  "phoneNumber": "+23276123456"
+}
+```
+</ResponseExample>
+
+### Response fields
+
+<ResponseField name="walletAddress" type="string">
+  The derived Solana wallet address.
+</ResponseField>
+
+<ResponseField name="isNew" type="boolean">
+  `true` if this is a newly derived wallet, `false` if it already existed.
+</ResponseField>
+
+<ResponseField name="phoneNumber" type="string">
+  The phone number associated with this wallet.
+</ResponseField>
+
+### Notes
+
+- Returns **201** for newly created wallets, **200** for existing ones
+- The same phone number always derives the same wallet address (deterministic)
+- Phone numbers are normalized before derivation (e.g., `076123456` → `+23276123456`)
+
+### Errors
+
+| Status | Message |
+|--------|---------|
+| 400 | `Invalid Sierra Leone phone number` |
+| 401 | `Missing API key` / `Invalid API key` |

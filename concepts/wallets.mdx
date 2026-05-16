@@ -1,0 +1,99 @@
+---
+title: "Wallets"
+description: "Derived and provided Solana wallets for USDC"
+---
+
+# Wallets
+
+Kola API delivers USDC to Solana wallets. Users can either provide their own wallet address or have one derived from their phone number.
+
+## Wallet types
+
+### Provided wallets
+
+If the user already has a Solana wallet (from Phantom, Solflare, or any other wallet), they pass their address in the deposit request:
+
+```json
+{
+  "amount": 50000,
+  "currency": "SLE",
+  "paymentMethod": "ussd",
+  "phoneNumber": "+23276123456",
+  "walletAddress": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
+}
+```
+
+### Derived wallets
+
+If the user doesn't have a Solana wallet, simply omit `walletAddress`. The API derives a deterministic address from their phone number:
+
+```json
+{
+  "amount": 50000,
+  "currency": "SLE",
+  "paymentMethod": "ussd",
+  "phoneNumber": "+23276123456"
+}
+```
+
+**Key property**: The same phone number always produces the same wallet address. This means:
+- Users don't need to remember or manage wallet addresses
+- Subsequent deposits to the same phone number go to the same wallet
+- The wallet can be looked up at any time via `POST /v1/wallets/derive`
+
+## Derive a wallet explicitly
+
+You can derive a wallet without creating a deposit:
+
+```bash
+curl -X POST https://kola-api-beta.vercel.app/api/v1/wallets/derive \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -d '{"phoneNumber": "+23276123456"}'
+```
+
+Response:
+```json
+{
+  "walletAddress": "7LFugw7HAGEFWexnHi3dyDBaWniXJLthLGkPQip4jEEA",
+  "isNew": true,
+  "phoneNumber": "+23276123456"
+}
+```
+
+## Check USDC balance
+
+Query the USDC balance of any Solana wallet:
+
+```bash
+curl https://kola-api-beta.vercel.app/api/v1/wallets/7LFugw7HAGEFWexnHi3dyDBaWniXJLthLGkPQip4jEEA/balance \
+  -H "X-API-Key: YOUR_API_KEY"
+```
+
+Response:
+```json
+{
+  "walletAddress": "7LFugw7HAGEFWexnHi3dyDBaWniXJLthLGkPQip4jEEA",
+  "balance": "20.000000",
+  "rawBalance": "20000000",
+  "currency": "USDC"
+}
+```
+
+## Phone number format
+
+Phone numbers must be Sierra Leonean numbers. The API accepts multiple formats and normalizes them:
+
+| Input | Normalized |
+|-------|-----------|
+| `+23276123456` | `+23276123456` |
+| `23276123456` | `+23276123456` |
+| `076123456` | `+23276123456` |
+| `76123456` | `+23276123456` |
+
+## Technical details
+
+- Wallets are derived using Solana's `PublicKey.createWithSeed()` with the phone number as seed
+- USDC is an SPL token on Solana with 6 decimal places
+- The API automatically creates the USDC token account if it doesn't exist (funded by the treasury)
+- Token account creation costs a small amount of SOL (paid by the API operator's treasury)

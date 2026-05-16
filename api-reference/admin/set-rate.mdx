@@ -1,0 +1,86 @@
+---
+title: "Set Exchange Rate"
+api: "PUT /v1/admin/exchange-rates"
+description: "Set the SLE/USDC exchange rate for an application"
+---
+
+## Set Exchange Rate
+
+Sets the active exchange rate for a specific application. The new rate takes effect immediately for all future deposits.
+
+### Headers
+
+<ParamField header="X-Admin-Key" type="string" required>
+  Your admin secret key.
+</ParamField>
+
+<ParamField header="X-Application-Id" type="string" required>
+  The application ID to set the rate for.
+</ParamField>
+
+### Body parameters
+
+<ParamField body="rate" type="number" required>
+  SLE per 1 USDC. For example, `25` means 25 SLE = 1 USDC. Must be a positive number.
+</ParamField>
+
+<ParamField body="setBy" type="string" required>
+  Identifier for who is setting this rate (e.g., `"admin"`, an email, or operator name).
+</ParamField>
+
+<RequestExample>
+```bash
+curl -X PUT https://kola-api-beta.vercel.app/api/v1/admin/exchange-rates \
+  -H "Content-Type: application/json" \
+  -H "X-Admin-Key: YOUR_ADMIN_KEY" \
+  -H "X-Application-Id: a7784b0d-8be0-4338-be20-1d1a3ac9d1fc" \
+  -d '{
+    "rate": 25,
+    "setBy": "admin"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "message": "Exchange rate updated",
+  "rate": {
+    "id": "c3d4e5f6-7890-1abc-def2-345678901bcd",
+    "application": "a7784b0d-8be0-4338-be20-1d1a3ac9d1fc",
+    "rate": 25,
+    "is_active": true,
+    "set_by": "admin",
+    "created_at": "2026-05-16T18:31:22.721Z"
+  }
+}
+```
+</ResponseExample>
+
+### Response fields
+
+<ResponseField name="rate" type="object">
+  The newly created exchange rate record.
+</ResponseField>
+
+<ResponseField name="rate.rate" type="number">
+  The SLE per 1 USDC rate.
+</ResponseField>
+
+<ResponseField name="rate.is_active" type="boolean">
+  Always `true` for the newly set rate. Previous rates are automatically deactivated.
+</ResponseField>
+
+### Notes
+
+- Setting a new rate automatically deactivates the previous rate for that application
+- Existing deposits keep the rate they were created with (rate is snapshotted)
+- Rate must be a positive number
+
+### Errors
+
+| Status | Message |
+|--------|---------|
+| 400 | `X-Application-Id header is required` |
+| 400 | `Rate must be a positive number` |
+| 401 | `Missing admin key` / `Invalid admin key` |

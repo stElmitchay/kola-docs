@@ -1,0 +1,57 @@
+---
+title: "Get Exchange Rate"
+api: "GET /v1/public/rate"
+description: "Get the current SLE/USDC exchange rate for an application"
+---
+
+## Get Exchange Rate
+
+Returns the currently active exchange rate for a specific application. No authentication required.
+
+### Query parameters
+
+<ParamField query="application" type="string" required>
+  The application (API key) ID to get the rate for.
+</ParamField>
+
+<RequestExample>
+```bash
+curl "https://kola-api-beta.vercel.app/api/v1/public/rate?application=a7784b0d-8be0-4338-be20-1d1a3ac9d1fc"
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "baseCurrency": "SLE",
+  "quoteCurrency": "USDC",
+  "rate": 25,
+  "updatedAt": "2026-05-16T18:31:22.721Z"
+}
+```
+</ResponseExample>
+
+### Response fields
+
+<ResponseField name="baseCurrency" type="string">
+  Always `"SLE"`.
+</ResponseField>
+
+<ResponseField name="quoteCurrency" type="string">
+  Always `"USDC"`.
+</ResponseField>
+
+<ResponseField name="rate" type="number">
+  SLE per 1 USDC. Example: `25` means 25 SLE = 1 USDC.
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  ISO timestamp of when this rate was set.
+</ResponseField>
+
+### Errors
+
+| Status | Message |
+|--------|---------|
+| 400 | `application query parameter is required` |
+| 404 | `No active exchange rate found` |

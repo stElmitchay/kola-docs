@@ -1,0 +1,63 @@
+---
+title: "Get Wallet Balance"
+api: "GET /v1/wallets/{address}/balance"
+description: "Get the USDC balance of a Solana wallet"
+---
+
+## Get Wallet Balance
+
+Returns the USDC balance for any Solana wallet address.
+
+### Headers
+
+<ParamField header="X-API-Key" type="string" required>
+  Your API key.
+</ParamField>
+
+### Path parameters
+
+<ParamField path="address" type="string" required>
+  A Solana wallet address.
+</ParamField>
+
+<RequestExample>
+```bash
+curl https://kola-api-beta.vercel.app/api/v1/wallets/7LFugw7HAGEFWexnHi3dyDBaWniXJLthLGkPQip4jEEA/balance \
+  -H "X-API-Key: YOUR_API_KEY"
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "walletAddress": "7LFugw7HAGEFWexnHi3dyDBaWniXJLthLGkPQip4jEEA",
+  "balance": 20.0,
+  "rawBalance": 20000000,
+  "currency": "USDC"
+}
+```
+</ResponseExample>
+
+### Response fields
+
+<ResponseField name="walletAddress" type="string">
+  The queried Solana wallet address.
+</ResponseField>
+
+<ResponseField name="balance" type="number">
+  USDC balance as a human-readable number (e.g., `20.0` = 20 USDC).
+</ResponseField>
+
+<ResponseField name="rawBalance" type="integer">
+  USDC balance in minor units (6 decimals). `20000000` = 20.0 USDC.
+</ResponseField>
+
+<ResponseField name="currency" type="string">
+  Always `"USDC"`.
+</ResponseField>
+
+### Errors
+
+| Status | Message |
+|--------|---------|
+| 401 | `Missing API key` / `Invalid API key` |

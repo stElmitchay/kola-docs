@@ -1,0 +1,126 @@
+---
+title: "Quickstart"
+description: "Make your first mobile money to USDC deposit in 5 minutes"
+---
+
+# Quickstart
+
+This guide walks you through the complete flow: getting an API key, setting a rate, and creating your first deposit.
+
+## Prerequisites
+
+- An API key from the Kola API operator (contact the admin)
+- A phone number registered with Orange Money or Africell Money in Sierra Leone
+
+## Step 1: Verify your API key
+
+Test that your key works by checking the health endpoint:
+
+```bash
+curl https://kola-api-beta.vercel.app/api/v1/public/health
+```
+
+Response:
+```json
+{
+  "status": "ok",
+  "service": "kola-api",
+  "version": "1.0.0"
+}
+```
+
+## Step 2: Create a deposit (USSD method)
+
+This creates a deposit for 500 SLE (50000 minor units) that the user pays via USSD:
+
+```bash
+curl -X POST https://kola-api-beta.vercel.app/api/v1/deposits \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -d '{
+    "amount": 50000,
+    "currency": "SLE",
+    "paymentMethod": "ussd",
+    "phoneNumber": "+23276123456"
+  }'
+```
+
+Response:
+```json
+{
+  "id": "e60ba3db-9c51-4e8e-9e1c-ee62ae69ed95",
+  "status": "pending",
+  "amountSle": 50000,
+  "amountUsdc": 20000000,
+  "exchangeRate": 25,
+  "walletAddress": "7LFugw7HAGEFWexnHi3dyDBaWniXJLthLGkPQip4jEEA",
+  "walletType": "derived",
+  "paymentMethod": "ussd",
+  "ussdCode": "*715*6908234831#",
+  "expiresAt": "2026-05-16T19:07:52.936Z"
+}
+```
+
+The user dials `*715*6908234831#` on their phone and confirms the payment.
+
+## Step 3: Check deposit status
+
+Poll the deposit status to see when payment completes:
+
+```bash
+curl https://kola-api-beta.vercel.app/api/v1/deposits/e60ba3db-9c51-4e8e-9e1c-ee62ae69ed95 \
+  -H "X-API-Key: YOUR_API_KEY"
+```
+
+Response (after payment confirmed):
+```json
+{
+  "id": "e60ba3db-9c51-4e8e-9e1c-ee62ae69ed95",
+  "status": "completed",
+  "amountSle": 50000,
+  "amountUsdc": 20000000,
+  "exchangeRate": 25,
+  "walletAddress": "7LFugw7HAGEFWexnHi3dyDBaWniXJLthLGkPQip4jEEA",
+  "walletType": "derived",
+  "paymentMethod": "ussd",
+  "solanaTxSignature": "5UfD...xyz",
+  "failureReason": null,
+  "createdAt": "2026-05-16T18:37:52.734Z",
+  "updatedAt": "2026-05-16T18:38:12.104Z"
+}
+```
+
+Once `status` is `"completed"`, the `solanaTxSignature` confirms the USDC was sent on Solana.
+
+## Step 4: Create a deposit (Checkout method)
+
+For smartphone users, use the checkout method which redirects to a hosted payment page:
+
+```bash
+curl -X POST https://kola-api-beta.vercel.app/api/v1/deposits \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -d '{
+    "amount": 100000,
+    "currency": "SLE",
+    "paymentMethod": "checkout",
+    "phoneNumber": "+23276123456",
+    "walletAddress": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+    "successUrl": "https://yourapp.com/success",
+    "cancelUrl": "https://yourapp.com/cancel"
+  }'
+```
+
+Response includes a `redirectUrl` — send the user there to complete payment.
+
+## Understanding amounts
+
+- **SLE amounts** are in **minor units** (cents). `50000` = 500.00 SLE
+- **USDC amounts** are in **minor units** (6 decimals). `20000000` = 20.000000 USDC
+- **Exchange rate** example: rate `25` means 25 SLE = 1 USDC
+
+## Next steps
+
+- [Authentication](/authentication) — learn about API key management
+- [Deposits concept](/concepts/deposits) — understand the full deposit lifecycle
+- [Webhooks](/concepts/webhooks) — get notified when payments complete

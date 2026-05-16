@@ -1,0 +1,67 @@
+---
+title: "Introduction"
+description: "Mobile Money to USDC on-ramp API for Sierra Leone"
+---
+
+# What is Kola API?
+
+Kola API is a bridge that converts Sierra Leonean Leones (SLE) from mobile money into USDC on the Solana blockchain. It enables developers to build applications where users deposit mobile money and receive stablecoins — without needing to understand blockchain mechanics.
+
+## Who is it for?
+
+- **Fintech developers** building crypto on-ramps for West Africa
+- **Crypto communities** in Sierra Leone wanting easy fiat-to-crypto conversion
+- **Payment platforms** that need to settle in stablecoins
+- **Remittance apps** offering USDC as an alternative to traditional corridors
+
+## How it works
+
+<Steps>
+  <Step title="Initiate Deposit">
+    Your app calls `POST /v1/deposits` with the amount in SLE, the user's phone number, and their preferred payment method (web checkout or USSD).
+  </Step>
+  <Step title="User Pays via Mobile Money">
+    The user either visits a hosted checkout page or dials a USSD code (e.g., `*715*12345#`) to pay from their Orange Money or Africell Money account.
+  </Step>
+  <Step title="USDC Delivered">
+    Once payment is confirmed, Kola API automatically transfers the equivalent USDC to the user's Solana wallet. If they don't have a wallet, one is derived from their phone number.
+  </Step>
+</Steps>
+
+## Supported Providers
+
+| Provider | Type | Country |
+|----------|------|---------|
+| Orange Money | Mobile Money | Sierra Leone |
+| Africell Money | Mobile Money | Sierra Leone |
+
+## Key Features
+
+- **Two payment methods**: Web checkout (smartphones) and USSD codes (feature phones)
+- **Automatic wallet derivation**: Users without a Solana wallet get one derived from their phone number
+- **Pre-defined exchange rates**: Operators set the SLE/USDC rate via admin endpoints
+- **Webhook-driven**: Payments are confirmed asynchronously — no polling needed
+- **Idempotent**: Safe against duplicate webhooks and retries
+
+## Base URL
+
+```
+https://kola-api-beta.vercel.app/api
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Make your first deposit in 5 minutes
+  </Card>
+  <Card title="Authentication" icon="lock" href="/authentication">
+    Learn how API keys work
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/deposits/create">
+    Jump to the endpoints
+  </Card>
+  <Card title="Examples" icon="file-code" href="/examples/javascript">
+    See full integration code
+  </Card>
+</CardGroup>

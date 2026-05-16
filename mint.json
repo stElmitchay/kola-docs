@@ -1,0 +1,86 @@
+{
+  "$schema": "https://mintlify.com/schema.json",
+  "name": "Kola API",
+  "logo": {
+    "dark": "/logo/dark.svg",
+    "light": "/logo/light.svg"
+  },
+  "favicon": "/favicon.svg",
+  "colors": {
+    "primary": "#8B5CF6",
+    "light": "#A78BFA",
+    "dark": "#7C3AED"
+  },
+  "topbarLinks": [
+    {
+      "name": "API Status",
+      "url": "https://kola-api-beta.vercel.app/api/v1/public/health"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "GitHub",
+    "url": "https://github.com/stElmitchay/kola-api"
+  },
+  "tabs": [
+    { "name": "Documentation", "url": "/" },
+    { "name": "API Reference", "url": "/api-reference" }
+  ],
+  "navigation": [
+    {
+      "group": "Getting Started",
+      "pages": ["introduction", "quickstart", "authentication"]
+    },
+    {
+      "group": "Core Concepts",
+      "pages": [
+        "concepts/deposits",
+        "concepts/exchange-rates",
+        "concepts/wallets",
+        "concepts/webhooks"
+      ]
+    },
+    {
+      "group": "Public",
+      "pages": [
+        "api-reference/public/health",
+        "api-reference/public/providers",
+        "api-reference/public/rate"
+      ]
+    },
+    {
+      "group": "Deposits",
+      "pages": [
+        "api-reference/deposits/create",
+        "api-reference/deposits/get",
+        "api-reference/deposits/list"
+      ]
+    },
+    {
+      "group": "Wallets",
+      "pages": [
+        "api-reference/wallets/derive",
+        "api-reference/wallets/balance"
+      ]
+    },
+    {
+      "group": "Admin",
+      "pages": [
+        "api-reference/admin/create-api-key",
+        "api-reference/admin/list-api-keys",
+        "api-reference/admin/revoke-api-key",
+        "api-reference/admin/set-rate",
+        "api-reference/admin/get-rates"
+      ]
+    },
+    {
+      "group": "Resources",
+      "pages": ["errors", "examples/javascript", "examples/curl"]
+    }
+  ],
+  "api": {
+    "baseUrl": "https://kola-api-beta.vercel.app/api"
+  },
+  "footerSocials": {
+    "github": "https://github.com/stElmitchay/kola-api"
+  }
+}

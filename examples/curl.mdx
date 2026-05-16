@@ -1,0 +1,164 @@
+---
+title: "cURL"
+description: "Copy-paste cURL commands for every endpoint"
+---
+
+## cURL Examples
+
+Replace `YOUR_API_KEY` and `YOUR_ADMIN_KEY` with your actual keys.
+
+---
+
+### Public Endpoints
+
+<Accordion title="Health Check">
+```bash
+curl https://kola-api-beta.vercel.app/api/v1/public/health
+```
+</Accordion>
+
+<Accordion title="List Providers">
+```bash
+curl https://kola-api-beta.vercel.app/api/v1/public/providers
+```
+</Accordion>
+
+<Accordion title="Get Exchange Rate">
+```bash
+curl "https://kola-api-beta.vercel.app/api/v1/public/rate?application=YOUR_APPLICATION_ID"
+```
+</Accordion>
+
+---
+
+### Deposits
+
+<Accordion title="Create Deposit (USSD)">
+```bash
+curl -X POST https://kola-api-beta.vercel.app/api/v1/deposits \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -d '{
+    "amount": 50000,
+    "currency": "SLE",
+    "paymentMethod": "ussd",
+    "phoneNumber": "+23276123456"
+  }'
+```
+</Accordion>
+
+<Accordion title="Create Deposit (Checkout)">
+```bash
+curl -X POST https://kola-api-beta.vercel.app/api/v1/deposits \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -d '{
+    "amount": 50000,
+    "currency": "SLE",
+    "paymentMethod": "checkout",
+    "phoneNumber": "+23276123456",
+    "walletAddress": "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+    "successUrl": "https://yourapp.com/success",
+    "cancelUrl": "https://yourapp.com/cancel"
+  }'
+```
+</Accordion>
+
+<Accordion title="Get Deposit">
+```bash
+curl https://kola-api-beta.vercel.app/api/v1/deposits/DEPOSIT_ID \
+  -H "X-API-Key: YOUR_API_KEY"
+```
+</Accordion>
+
+<Accordion title="List All Deposits">
+```bash
+curl https://kola-api-beta.vercel.app/api/v1/deposits \
+  -H "X-API-Key: YOUR_API_KEY"
+```
+</Accordion>
+
+<Accordion title="List Deposits (Filtered)">
+```bash
+curl "https://kola-api-beta.vercel.app/api/v1/deposits?status=completed&limit=10" \
+  -H "X-API-Key: YOUR_API_KEY"
+```
+</Accordion>
+
+---
+
+### Wallets
+
+<Accordion title="Derive Wallet">
+```bash
+curl -X POST https://kola-api-beta.vercel.app/api/v1/wallets/derive \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -d '{
+    "phoneNumber": "+23276123456"
+  }'
+```
+</Accordion>
+
+<Accordion title="Get Wallet Balance">
+```bash
+curl https://kola-api-beta.vercel.app/api/v1/wallets/WALLET_ADDRESS/balance \
+  -H "X-API-Key: YOUR_API_KEY"
+```
+</Accordion>
+
+---
+
+### Admin — API Keys
+
+<Accordion title="Create API Key">
+```bash
+curl -X POST https://kola-api-beta.vercel.app/api/v1/admin/api-keys \
+  -H "Content-Type: application/json" \
+  -H "X-Admin-Key: YOUR_ADMIN_KEY" \
+  -d '{
+    "name": "Production Key",
+    "businessName": "Acme Corp",
+    "appName": "Acme Wallet"
+  }'
+```
+</Accordion>
+
+<Accordion title="List API Keys">
+```bash
+curl https://kola-api-beta.vercel.app/api/v1/admin/api-keys \
+  -H "X-Admin-Key: YOUR_ADMIN_KEY"
+```
+</Accordion>
+
+<Accordion title="Revoke API Key">
+```bash
+curl -X DELETE https://kola-api-beta.vercel.app/api/v1/admin/api-keys/API_KEY_ID \
+  -H "X-Admin-Key: YOUR_ADMIN_KEY"
+```
+</Accordion>
+
+---
+
+### Admin — Exchange Rates
+
+<Accordion title="Set Exchange Rate">
+```bash
+curl -X PUT https://kola-api-beta.vercel.app/api/v1/admin/exchange-rates \
+  -H "Content-Type: application/json" \
+  -H "X-Admin-Key: YOUR_ADMIN_KEY" \
+  -H "X-Application-Id: YOUR_APPLICATION_ID" \
+  -d '{
+    "rate": 25,
+    "setBy": "admin"
+  }'
+```
+</Accordion>
+
+<Accordion title="Get Exchange Rates">
+```bash
+curl https://kola-api-beta.vercel.app/api/v1/admin/exchange-rates \
+  -H "X-Admin-Key: YOUR_ADMIN_KEY" \
+  -H "X-Application-Id: YOUR_APPLICATION_ID"
+```
+</Accordion>

@@ -1,0 +1,52 @@
+---
+title: "List API Keys"
+api: "GET /v1/admin/api-keys"
+description: "List all API keys"
+---
+
+## List API Keys
+
+Returns all API keys. The actual key values are not returned — only metadata.
+
+### Headers
+
+<ParamField header="X-Admin-Key" type="string" required>
+  Your admin secret key.
+</ParamField>
+
+<RequestExample>
+```bash
+curl https://kola-api-beta.vercel.app/api/v1/admin/api-keys \
+  -H "X-Admin-Key: YOUR_ADMIN_KEY"
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+[
+  {
+    "id": "a7784b0d-8be0-4338-be20-1d1a3ac9d1fc",
+    "client_id": "b2e3f4a5-6789-0abc-def1-234567890abc",
+    "name": "Production Key",
+    "business_name": "Acme Corp",
+    "app_name": "Acme Wallet",
+    "is_active": true,
+    "rate_limit": 100,
+    "permissions": {},
+    "created_at": "2026-05-16T18:30:00.000Z",
+    "expires_at": null
+  }
+]
+```
+</ResponseExample>
+
+### Notes
+
+- Key hashes are never exposed — only metadata is returned
+- Both active and inactive keys are listed
+
+### Errors
+
+| Status | Message |
+|--------|---------|
+| 401 | `Missing admin key` / `Invalid admin key` |
