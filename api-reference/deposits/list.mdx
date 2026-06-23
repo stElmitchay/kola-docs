@@ -70,3 +70,4 @@ curl "https://kola-api-beta.vercel.app/api/v1/deposits?status=completed&limit=10
 
 - Results are ordered by `created_at` descending (newest first)
 - Each application only sees its own deposits
+- Field names match the database snake_case schema (unlike the camelCase single-row responses from `GET /v1/deposits/:id`)

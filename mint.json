@@ -38,6 +38,7 @@
       "group": "Core Concepts",
       "pages": [
         "concepts/deposits",
+        "concepts/withdrawals",
         "concepts/exchange-rates",
         "concepts/wallets",
         "concepts/webhooks"
@@ -60,6 +61,15 @@
       ]
     },
     {
+      "group": "Withdrawals",
+      "pages": [
+        "api-reference/withdrawals/create",
+        "api-reference/withdrawals/confirm",
+        "api-reference/withdrawals/get",
+        "api-reference/withdrawals/list"
+      ]
+    },
+    {
       "group": "Wallets",
       "pages": [
         "api-reference/wallets/derive",
@@ -73,7 +83,8 @@
         "api-reference/admin/list-api-keys",
         "api-reference/admin/revoke-api-key",
         "api-reference/admin/set-rate",
-        "api-reference/admin/get-rates"
+        "api-reference/admin/get-rates",
+        "api-reference/admin/list-deposits"
       ]
     },
     {
