@@ -1,0 +1,76 @@
+---
+title: "Get Withdrawal"
+api: "GET /v1/withdrawals/{id}"
+description: "Get the status and details of a withdrawal"
+---
+
+## Get Withdrawal
+
+Retrieve a withdrawal by its ID. Poll this endpoint to track progress from `pending_deposit` through `completed`.
+
+### Headers
+
+<ParamField header="X-API-Key" type="string" required>
+  Your API key.
+</ParamField>
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  The withdrawal UUID.
+</ParamField>
+
+<RequestExample>
+```bash
+curl https://kola-api-beta.vercel.app/api/v1/withdrawals/10f98e4d-83c5-4efb-adff-3cd82b2e9dac \
+  -H "X-API-Key: YOUR_API_KEY"
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "id": "10f98e4d-83c5-4efb-adff-3cd82b2e9dac",
+  "status": "completed",
+  "amountUsdc": 400000,
+  "amountSle": 990,
+  "feeBps": 100,
+  "exchangeRate": 25,
+  "phoneNumber": "+23276123456",
+  "providerCode": "m17",
+  "fromWalletAddress": "291T1GQE8WJ6zp6aoQkzTKjje9AL2SGohNPTH46BsGtJ",
+  "treasuryAddress": "BrJHtQqkLN1hf9XgKjaYVkp8oYcKwbjSTa1LovJmDaPC",
+  "solanaTxSignature": "2zZzVD5KJ5KN...stdrh",
+  "monimePayoutId": "pay_01J...",
+  "failureReason": null,
+  "expiresAt": "2026-05-27T22:30:00.000Z",
+  "createdAt": "2026-05-27T22:00:00.000Z",
+  "updatedAt": "2026-05-27T22:05:42.881Z"
+}
+```
+</ResponseExample>
+
+### Response fields
+
+<ResponseField name="status" type="string">
+  One of: `pending_deposit`, `received`, `processing`, `completed`, `failed`, `expired`.
+</ResponseField>
+
+<ResponseField name="solanaTxSignature" type="string | null">
+  The signature of the user's USDC transfer to the treasury. Populated when status reaches `received` or later.
+</ResponseField>
+
+<ResponseField name="monimePayoutId" type="string | null">
+  Monime's payout identifier. Populated when the payout is dispatched (status `processing` or later).
+</ResponseField>
+
+<ResponseField name="failureReason" type="string | null">
+  Error detail when status is `failed`.
+</ResponseField>
+
+### Errors
+
+| Status | Message |
+|--------|---------|
+| 401 | `Missing API key` / `Invalid API key` |
+| 404 | `Withdrawal not found` |

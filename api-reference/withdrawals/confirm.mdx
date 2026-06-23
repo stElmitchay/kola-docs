@@ -1,0 +1,87 @@
+---
+title: "Confirm Withdrawal"
+api: "POST /v1/withdrawals/{id}/confirm"
+description: "Manually confirm an on-chain USDC transfer and trigger the payout"
+---
+
+## Confirm Withdrawal
+
+Verifies a Solana transaction signature on-chain and triggers the Monime payout if it matches the withdrawal. Most callers can skip this endpoint and let Helius auto-confirm — it exists for environments where the webhook isn't reachable, or to retry a failed payout.
+
+The endpoint is race-safe with the auto-confirm webhook: only the first writer to flip `pending_deposit → received` triggers the payout. The other path no-ops and returns the current row.
+
+### Headers
+
+<ParamField header="X-API-Key" type="string" required>
+  Your API key.
+</ParamField>
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  The withdrawal UUID.
+</ParamField>
+
+### Body parameters
+
+<ParamField body="solanaTxSignature" type="string" required>
+  The Solana transaction signature (at least 64 characters) that paid `amountUsdc` from `fromWalletAddress` to the treasury.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://kola-api-beta.vercel.app/api/v1/withdrawals/10f98e4d-83c5-4efb-adff-3cd82b2e9dac/confirm \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -d '{
+    "solanaTxSignature": "2zZzVD5KJ5KNG5VMUc6dx53FRrU2PWu2uzR93cRzPgGsNpVarBfzqxAteWLRpt3V6X6swoEyV3tF6DepmBnstdrh"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "id": "10f98e4d-83c5-4efb-adff-3cd82b2e9dac",
+  "status": "processing",
+  "amountUsdc": 400000,
+  "amountSle": 990,
+  "feeBps": 100,
+  "exchangeRate": 25,
+  "phoneNumber": "+23276123456",
+  "providerCode": "m17",
+  "fromWalletAddress": "291T1GQE8WJ6zp6aoQkzTKjje9AL2SGohNPTH46BsGtJ",
+  "treasuryAddress": "BrJHtQqkLN1hf9XgKjaYVkp8oYcKwbjSTa1LovJmDaPC",
+  "solanaTxSignature": "2zZzVD5KJ5KN...stdrh",
+  "monimePayoutId": "pay_01J...",
+  "failureReason": null,
+  "expiresAt": "2026-05-27T22:30:00.000Z",
+  "createdAt": "2026-05-27T22:00:00.000Z",
+  "updatedAt": "2026-05-27T22:05:14.012Z"
+}
+```
+</ResponseExample>
+
+### Verification rules
+
+The on-chain transfer must satisfy all of:
+
+- Transaction is finalized
+- Source token account owner equals `fromWalletAddress`
+- Destination token account is the treasury USDC ATA
+- Transfer amount equals `amountUsdc` exactly
+- Withdrawal has not expired
+
+### Retry behavior
+
+If the on-chain transfer succeeded but the Monime payout failed (status `failed`, `solanaTxSignature` recorded, `monimePayoutId` null), re-submitting the same `solanaTxSignature` to this endpoint retries the payout. On-chain verification is skipped on retry.
+
+### Errors
+
+| Status | Message |
+|--------|---------|
+| 400 | `Withdrawal cannot be confirmed (current status: ...)` |
+| 400 | `Withdrawal has expired` |
+| 400 | Verification reason (e.g. `Source wallet does not match`, `Amount mismatch`, `Transaction not finalized`) |
+| 401 | `Missing API key` / `Invalid API key` |
+| 404 | `Withdrawal not found` |

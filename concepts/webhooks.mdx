@@ -5,44 +5,73 @@ description: "How payment confirmations are processed"
 
 # Webhooks
 
-Kola API uses webhooks from Monime (the mobile money gateway) to know when a user has completed their payment. You don't need to set up webhooks yourself — they're configured on the API operator's side.
+Kola API consumes two webhook streams to drive its flows. You don't set them up yourself — they're configured on the API operator's side.
 
-## How it works
+| Source | Endpoint | Drives |
+|--------|----------|--------|
+| Monime (mobile money gateway) | `POST /api/webhooks/monime` | Deposit completion **and** withdrawal payout completion |
+| Helius (Solana indexer) | `POST /api/webhooks/helius` | Withdrawal auto-confirm |
+
+## Monime — deposits and payouts
+
+### Deposit flow
 
 1. User completes mobile money payment (dials USSD code or pays via checkout)
 2. Monime sends a webhook to `POST /api/webhooks/monime`
 3. Kola API verifies the signature, finds the matching deposit, and initiates the USDC transfer
 4. Deposit status updates: `pending` → `confirmed` → `processing` → `completed`
 
-## Webhook events
+### Withdrawal payout flow
+
+After Kola dispatches a payout, Monime fires back to the same endpoint when the SLE actually lands on the recipient's phone (or fails).
 
 | Event | Description | Action taken |
 |-------|-------------|-------------|
-| `payment_code.completed` | USSD payment successful | Transfer USDC |
-| `checkout_session.completed` | Checkout payment successful | Transfer USDC |
-| `payment_code.expired` | USSD code expired | Mark deposit as `expired` |
-| `checkout_session.expired` | Checkout session expired | Mark deposit as `expired` |
-| `checkout_session.cancelled` | User cancelled checkout | Mark deposit as `expired` |
+| `payment_code.completed` | USSD deposit payment successful | Transfer USDC, deposit → `completed` |
+| `checkout_session.completed` | Checkout deposit payment successful | Transfer USDC, deposit → `completed` |
+| `payment_code.expired` | USSD code expired | Deposit → `expired` |
+| `checkout_session.expired` | Checkout session expired | Deposit → `expired` |
+| `checkout_session.cancelled` | User cancelled checkout | Deposit → `expired` |
+| `payout.completed` | SLE delivered to recipient phone | Withdrawal → `completed` |
+| `payout.failed` | Provider rejected the payout | Withdrawal → `failed` |
 
-## Signature verification
+### Signature verification
 
-Every webhook request includes a `Monime-Signature` header. The API verifies this using HMAC-SHA256 with the shared webhook secret. Requests with invalid signatures are rejected with `401`.
+Every Monime webhook request includes a `Monime-Signature` header. The API verifies this using HMAC-SHA256 with the shared webhook secret. Requests with invalid signatures are rejected with `401`.
+
+## Helius — withdrawal auto-confirm
+
+Helius watches the treasury USDC associated token account on Solana. When a user pushes USDC to the treasury as part of a withdrawal, Helius fires a webhook with the parsed token transfer.
+
+1. Caller `POST /v1/withdrawals` → row inserted as `pending_deposit`
+2. User sends `amountUsdc` of USDC from `fromWalletAddress` to the returned `treasuryAddress`
+3. Helius posts the parsed transfer to `POST /api/webhooks/helius`
+4. Kola matches the transfer to an open withdrawal by `(fromWalletAddress, amountUsdc)`, advances it `pending_deposit → received` via a compare-and-swap, and dispatches the Monime payout
+5. Withdrawal status updates: `received` → `processing` → `completed`
+
+### Authentication
+
+Helius requests carry a shared auth header (configured on the operator's Helius dashboard). The API verifies it with a constant-time compare and rejects mismatches with `401`.
+
+### Race safety vs. manual confirm
+
+The same `pending_deposit → received` compare-and-swap gates both the Helius webhook and the manual `POST /v1/withdrawals/:id/confirm` endpoint. The Monime payout fires exactly once even if both paths run.
 
 ## Idempotency
 
 Webhooks may fire multiple times for the same event. The API handles this safely:
 
-- If a deposit is already `completed` or `failed`, the webhook is acknowledged but no action is taken
-- USDC transfers are only initiated once per deposit
-- All status transitions are atomic
+- If a deposit or withdrawal is already in a terminal state (`completed`, `failed`, `expired`), the webhook is acknowledged but no action is taken
+- USDC transfers and Monime payouts are only initiated once per row
+- All status transitions are atomic; concurrent writers race-safely via compare-and-swap on the row status
 
 ## For integrators
 
 As an API integrator, you don't interact with webhooks directly. Instead:
 
-1. **Create a deposit** via `POST /v1/deposits`
-2. **Poll the status** via `GET /v1/deposits/:id`
-3. **Check for completion** — when `status` becomes `"completed"`, the `solanaTxSignature` field contains the Solana transaction hash
+1. **Create a deposit or withdrawal** via `POST /v1/deposits` or `POST /v1/withdrawals`
+2. **Poll the status** via the corresponding `GET /v1/{kind}/:id`
+3. **Check for completion** — `solanaTxSignature` (deposits) or `monimePayoutId` (withdrawals) is populated when the row reaches `completed`
 
 ### Recommended polling strategy
 

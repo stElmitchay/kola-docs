@@ -1,0 +1,121 @@
+---
+title: "Create Withdrawal"
+api: "POST /v1/withdrawals"
+description: "Initiate a USDC to mobile money withdrawal"
+---
+
+## Create Withdrawal
+
+Creates a new withdrawal and returns the treasury address the user must send USDC to. The withdrawal sits in `pending_deposit` until either Helius detects the on-chain transfer (auto-confirm) or the caller submits the signature to `/:id/confirm`.
+
+### Headers
+
+<ParamField header="X-API-Key" type="string" required>
+  Your API key.
+</ParamField>
+
+### Body parameters
+
+<ParamField body="amountUsdc" type="integer" required>
+  Amount in USDC minor units (6 decimals). `400000` = 0.40 USDC. Must be between `WITHDRAWAL_MIN_USDC` and `WITHDRAWAL_MAX_USDC` (defaults: 0.10–100 USDC).
+</ParamField>
+
+<ParamField body="phoneNumber" type="string" required>
+  Sierra Leonean phone number that will receive the SLE payout (e.g., `"+23276123456"`).
+</ParamField>
+
+<ParamField body="providerCode" type="string" required>
+  Mobile money provider. `"m17"` = Orange Money, `"m18"` = Africell Money.
+</ParamField>
+
+<ParamField body="fromWalletAddress" type="string" required>
+  Solana wallet address the USDC will be sent from. Must be at least 32 characters. Combined with `amountUsdc`, this pair identifies the incoming transfer for auto-confirm — duplicates of an open `(fromWalletAddress, amountUsdc)` pair are rejected.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Optional key-value pairs to attach to the withdrawal.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://kola-api-beta.vercel.app/api/v1/withdrawals \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -d '{
+    "amountUsdc": 400000,
+    "phoneNumber": "+23276123456",
+    "providerCode": "m17",
+    "fromWalletAddress": "291T1GQE8WJ6zp6aoQkzTKjje9AL2SGohNPTH46BsGtJ"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+{
+  "id": "10f98e4d-83c5-4efb-adff-3cd82b2e9dac",
+  "status": "pending_deposit",
+  "amountUsdc": 400000,
+  "amountSle": 990,
+  "feeBps": 100,
+  "exchangeRate": 25,
+  "phoneNumber": "+23276123456",
+  "providerCode": "m17",
+  "fromWalletAddress": "291T1GQE8WJ6zp6aoQkzTKjje9AL2SGohNPTH46BsGtJ",
+  "treasuryAddress": "BrJHtQqkLN1hf9XgKjaYVkp8oYcKwbjSTa1LovJmDaPC",
+  "reference": "10f98e4d-83c5-4efb-adff-3cd82b2e9dac",
+  "expiresAt": "2026-05-27T22:30:00.000Z"
+}
+```
+</ResponseExample>
+
+### Response fields
+
+<ResponseField name="id" type="string">
+  Unique withdrawal ID (UUID).
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Always `"pending_deposit"` on creation.
+</ResponseField>
+
+<ResponseField name="amountUsdc" type="integer">
+  USDC amount in minor units (6 decimals).
+</ResponseField>
+
+<ResponseField name="amountSle" type="integer">
+  SLE amount the recipient will receive, in minor units (cents). Already net of the fee.
+</ResponseField>
+
+<ResponseField name="feeBps" type="integer">
+  Withdrawal fee in basis points (e.g., `100` = 1%).
+</ResponseField>
+
+<ResponseField name="exchangeRate" type="number">
+  Rate used for this withdrawal (locked in at creation).
+</ResponseField>
+
+<ResponseField name="treasuryAddress" type="string">
+  Solana address the user must send `amountUsdc` to. The associated USDC token account is monitored by Helius.
+</ResponseField>
+
+<ResponseField name="reference" type="string">
+  Echo of `id`, returned for convenience when correlating Solana memos.
+</ResponseField>
+
+<ResponseField name="expiresAt" type="string">
+  ISO timestamp 30 minutes from creation. After this time, no incoming USDC will be matched to the withdrawal.
+</ResponseField>
+
+### Errors
+
+| Status | Message |
+|--------|---------|
+| 400 | `Invalid Sierra Leone phone number` |
+| 400 | `Amount below minimum (...)` |
+| 400 | `Amount exceeds maximum (...)` |
+| 400 | `Daily withdrawal cap of ... USDC would be exceeded` |
+| 400 | `No active exchange rate configured` |
+| 400 | `Amount too small to produce any SLE after fee` |
+| 400 | `An open withdrawal already exists for this wallet and amount` |
+| 401 | `Missing API key` / `Invalid API key` |

@@ -1,0 +1,76 @@
+---
+title: "List Withdrawals"
+api: "GET /v1/withdrawals"
+description: "List all withdrawals with optional filters"
+---
+
+## List Withdrawals
+
+Returns withdrawals for your application, newest first. Supports filtering by phone number and status.
+
+### Headers
+
+<ParamField header="X-API-Key" type="string" required>
+  Your API key.
+</ParamField>
+
+### Query parameters
+
+<ParamField query="phoneNumber" type="string">
+  Filter by phone number (normalized format, e.g., `+23276123456`).
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by status: `pending_deposit`, `received`, `processing`, `completed`, `failed`, `expired`.
+</ParamField>
+
+<ParamField query="limit" type="integer">
+  Maximum number of results (default: all).
+</ParamField>
+
+<ParamField query="offset" type="integer">
+  Number of results to skip (for pagination).
+</ParamField>
+
+<RequestExample>
+```bash All withdrawals
+curl https://kola-api-beta.vercel.app/api/v1/withdrawals \
+  -H "X-API-Key: YOUR_API_KEY"
+```
+
+```bash Filtered
+curl "https://kola-api-beta.vercel.app/api/v1/withdrawals?status=completed&limit=10" \
+  -H "X-API-Key: YOUR_API_KEY"
+```
+</RequestExample>
+
+<ResponseExample>
+```json
+[
+  {
+    "id": "10f98e4d-83c5-4efb-adff-3cd82b2e9dac",
+    "application": "a7784b0d-8be0-4338-be20-1d1a3ac9d1fc",
+    "phone_number": "+23276123456",
+    "from_wallet_address": "291T1GQE8WJ6zp6aoQkzTKjje9AL2SGohNPTH46BsGtJ",
+    "provider_code": "m17",
+    "amount_usdc": 400000,
+    "amount_sle": 990,
+    "fee_bps": 100,
+    "exchange_rate": 25,
+    "status": "completed",
+    "solana_tx_signature": "2zZzVD5KJ5KN...stdrh",
+    "monime_payout_id": "pay_01J...",
+    "failure_reason": null,
+    "expires_at": "2026-05-27T22:30:00.000Z",
+    "created_at": "2026-05-27T22:00:00.000Z",
+    "updated_at": "2026-05-27T22:05:42.881Z"
+  }
+]
+```
+</ResponseExample>
+
+### Notes
+
+- Results are ordered by `created_at` descending (newest first).
+- Each application only sees its own withdrawals.
+- Field names match the database snake_case schema (unlike the camelCase single-row responses).

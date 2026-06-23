@@ -1,20 +1,25 @@
 ---
 title: "Introduction"
-description: "Mobile Money to USDC on-ramp API for Sierra Leone"
+description: "Mobile Money ↔ USDC on/off-ramp API for Sierra Leone"
 ---
 
 # What is Kola API?
 
-Kola API is a bridge that converts Sierra Leonean Leones (SLE) from mobile money into USDC on the Solana blockchain. It enables developers to build applications where users deposit mobile money and receive stablecoins — without needing to understand blockchain mechanics.
+Kola API is a bidirectional bridge between Sierra Leonean Leones (SLE) on mobile money and USDC on Solana. It powers both directions:
+
+- **On-ramp (deposit)**: user pays SLE via Orange Money or Africell Money → receives USDC on a Solana wallet.
+- **Off-ramp (withdrawal)**: user sends USDC to the treasury on Solana → recipient phone receives SLE via mobile money payout.
 
 ## Who is it for?
 
-- **Fintech developers** building crypto on-ramps for West Africa
-- **Crypto communities** in Sierra Leone wanting easy fiat-to-crypto conversion
-- **Payment platforms** that need to settle in stablecoins
+- **Fintech developers** building crypto on/off-ramps for West Africa
+- **Crypto communities** in Sierra Leone wanting easy fiat-to-crypto conversion in either direction
+- **Payment platforms** that need to settle in stablecoins or cash out to mobile money
 - **Remittance apps** offering USDC as an alternative to traditional corridors
 
 ## How it works
+
+### Deposit (SLE → USDC)
 
 <Steps>
   <Step title="Initiate Deposit">
@@ -28,6 +33,20 @@ Kola API is a bridge that converts Sierra Leonean Leones (SLE) from mobile money
   </Step>
 </Steps>
 
+### Withdrawal (USDC → SLE)
+
+<Steps>
+  <Step title="Initiate Withdrawal">
+    Your app calls `POST /v1/withdrawals` with the USDC amount, the recipient phone number, the provider, and the source Solana wallet. The response includes the treasury address.
+  </Step>
+  <Step title="User Sends USDC On-Chain">
+    The user signs and sends the USDC from their wallet to the returned treasury address. A Helius webhook detects the transfer automatically — no second API call is required.
+  </Step>
+  <Step title="SLE Paid Out">
+    Kola triggers a Monime payout to the recipient's mobile money account. The withdrawal advances `received → processing → completed`.
+  </Step>
+</Steps>
+
 ## Supported Providers
 
 | Provider | Type | Country |
@@ -37,11 +56,13 @@ Kola API is a bridge that converts Sierra Leonean Leones (SLE) from mobile money
 
 ## Key Features
 
-- **Two payment methods**: Web checkout (smartphones) and USSD codes (feature phones)
-- **Automatic wallet derivation**: Users without a Solana wallet get one derived from their phone number
-- **Pre-defined exchange rates**: Operators set the SLE/USDC rate via admin endpoints
-- **Webhook-driven**: Payments are confirmed asynchronously — no polling needed
-- **Idempotent**: Safe against duplicate webhooks and retries
+- **Both directions**: SLE → USDC (deposit) and USDC → SLE (withdrawal) on a single API
+- **Two payment methods for deposits**: Web checkout (smartphones) and USSD codes (feature phones)
+- **Auto-confirmed withdrawals**: Helius detects the on-chain USDC transfer — no second API call required
+- **Automatic wallet derivation**: Deposit users without a Solana wallet get one derived from their phone number
+- **Pre-defined exchange rates**: Operators set the SLE/USDC rate via admin endpoints; a configurable fee applies to withdrawals
+- **Webhook-driven**: Status changes are pushed asynchronously — polling is for clients only
+- **Idempotent**: Safe against duplicate webhooks, retries, and concurrent manual + auto confirms
 
 ## Base URL
 
